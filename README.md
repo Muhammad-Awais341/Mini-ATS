@@ -7,7 +7,7 @@ The application allows users to manage job postings and track candidates through
 
 ## 🚀 Live Application
 
-https://Mini-ATS.vercel.app
+https://mini-ats-sigma.vercel.app/
 
 ---
 
@@ -21,8 +21,8 @@ https://github.com/Muhammad-Awais341/Mini-ATS
 
 You can use the following credentials to test the application:
 
-* **Email:** [test@test.com](mailto:test@test.com)
-* **Password:** 123456
+* **Email:** test2@gmail.com
+* **Password:** Test1234
 
 Or create your own account using the Sign Up option.
 
