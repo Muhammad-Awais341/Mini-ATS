@@ -128,16 +128,16 @@ export default function KanbanPage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Kanban</h1>
-        <button className="border px-3 py-1 rounded" onClick={() => router.push("/jobs")}>
-          Back to Jobs
-        </button>
-      </div>
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold">Kanban</h1>
+          <button className="border px-3 py-1 rounded" onClick={() => router.push("/jobs")}>
+            Back to Jobs
+          </button>
+        </div>
 
-      <div className="mt-4 flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2">
+        <div className="mt-4 flex flex-wrap gap-3 items-center">
+          <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">Job:</span>
           <select
             className="border p-2 rounded"
