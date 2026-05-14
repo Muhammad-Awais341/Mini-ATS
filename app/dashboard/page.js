@@ -1,61 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { useDashboardData } from "./useDashboardData";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { useSWRConfig } from "swr";
 
 export default function DashboardPage() {
+  const supabase = createSupabaseBrowserClient();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
-  const [jobsCount, setJobsCount] = useState(0);
-  const [candidatesCount, setCandidatesCount] = useState(0);
-
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.auth.getUser();
-      const user = data?.user;
-
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      setEmail(user.email || "");
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      const currentRole = profile?.role || "";
-      setRole(currentRole);
-
-      let jobsQuery = supabase.from("jobs").select("*", { count: "exact", head: true });
-      if (currentRole !== "admin") jobsQuery = jobsQuery.eq("created_by", user.id);
-      const { count: jobsTotal } = await jobsQuery;
-      setJobsCount(jobsTotal || 0);
-
-      let candidatesQuery = supabase.from("candidates").select("*", { count: "exact", head: true });
-
-      if (currentRole !== "admin") {
-        const { data: jobs } = await supabase.from("jobs").select("id").eq("created_by", user.id);
-        const jobIds = jobs?.map((j) => j.id) || [];
-        if (jobIds.length > 0) candidatesQuery = candidatesQuery.in("job_id", jobIds);
-      }
-
-      const { count: candidatesTotal } = await candidatesQuery;
-      setCandidatesCount(candidatesTotal || 0);
-    };
-
-    load();
-  }, [router]);
+  const { data, isLoading, isError } = useDashboardData(supabase);
+  const { mutate } = useSWRConfig();
 
   const logout = async () => {
     await supabase.auth.signOut();
+    
+    // Clear SWR cache to prevent data leakage between users
+    mutate(() => true, undefined, { revalidate: false });
+    
     router.push("/login");
   };
+
+  if (isLoading || !supabase) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    router.push("/login");
+    return null;
+  }
 
   return (
     <div className="p-8">
@@ -79,20 +52,20 @@ export default function DashboardPage() {
 
           <div className="border border-slate-200 rounded-xl p-6">
             <p className="text-sm text-slate-500">Signed in as</p>
-            <p className="font-semibold mt-1">{email}</p>
+            <p className="font-semibold mt-1">{data.email}</p>
             <p className="text-sm text-slate-500 mt-2">
-              Role: <span className="font-medium text-slate-700">{role || "Loading..."}</span>
+              Role: <span className="font-medium text-slate-700">{data.role || "Loading..."}</span>
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="border border-slate-200 rounded-xl p-6 text-center">
               <p className="text-sm text-slate-500">Jobs</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{jobsCount}</p>
+              <p className="text-3xl font-bold text-blue-600 mt-2">{data.jobsCount}</p>
             </div>
             <div className="border border-slate-200 rounded-xl p-6 text-center">
               <p className="text-sm text-slate-500">Candidates</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{candidatesCount}</p>
+              <p className="text-3xl font-bold text-blue-600 mt-2">{data.candidatesCount}</p>
             </div>
           </div>
         </div>
@@ -112,7 +85,7 @@ export default function DashboardPage() {
             Kanban
           </button>
 
-          {role === "admin" && (
+          {data.role === "admin" && (
             <button
               className="border border-slate-300 px-5 py-2 rounded-lg hover:bg-slate-50 transition"
               onClick={() => router.push("/admin")}

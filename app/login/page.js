@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LoginPage() {
+  const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onLogin = async (e) => {
     e.preventDefault();
-    setMsg("");
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -22,12 +22,13 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setMsg(error.message);
+      toast.error(error.message);
       setLoading(false);
       return;
     }
 
     setLoading(false);
+    toast.success("Logged in successfully!");
     router.push("/dashboard");
   };
 
@@ -59,8 +60,6 @@ export default function LoginPage() {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
-
-        {msg && <p className="text-red-600">{msg}</p>}
       </form>
 
       <p className="mt-4 text-center">

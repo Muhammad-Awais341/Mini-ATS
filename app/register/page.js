@@ -1,26 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
+  const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("customer");
-  const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onRegister = async (e) => {
     e.preventDefault();
-    setMsg("");
     setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
-      setMsg(error.message);
+      toast.error(error.message);
       setLoading(false);
       return;
     }
@@ -30,11 +29,12 @@ export default function RegisterPage() {
     if (user) {
       await supabase.from("profiles").insert({
         id: user.id,
-        role,
+        role: "customer",
       });
     }
 
     setLoading(false);
+    toast.success("Registration successful!");
     router.push("/login");
   };
 
@@ -60,20 +60,9 @@ export default function RegisterPage() {
           required
         />
 
-        <select
-          className="w-full border p-2 rounded"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <option value="customer">Customer</option>
-          <option value="admin">Admin</option>
-        </select>
-
         <button className="w-full bg-black text-white p-2 rounded" disabled={loading}>
           {loading ? "Creating..." : "Create account"}
         </button>
-
-        {msg && <p className="text-red-600">{msg}</p>}
       </form>
 
       <p className="mt-4 text-center">

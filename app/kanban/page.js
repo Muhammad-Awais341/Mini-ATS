@@ -1,82 +1,67 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
+import useSWR from "swr";
+import { toast } from "sonner";
 
 const COLUMNS = ["applied", "interview", "offer", "rejected"];
 
+const fetchJobs = async (supabase) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  let q = supabase.from("jobs").select("*").order("created_at", { ascending: false });
+  if (profile?.role !== "admin") q = q.eq("created_by", user.id);
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return data || [];
+};
+
+const fetchCandidates = async (supabase, jobId) => {
+  if (!jobId) return [];
+  const { data, error } = await supabase
+    .from("candidates")
+    .select("*")
+    .eq("job_id", jobId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
 export default function KanbanPage() {
+  const [supabase, setSupabase] = useState(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobIdFromUrl = searchParams.get("jobId") || "";
 
-  const [jobId, setJobId] = useState(jobIdFromUrl);
-  const [jobs, setJobs] = useState([]);
-  const [candidates, setCandidates] = useState([]);
-
   const [search, setSearch] = useState("");
-  const [msg, setMsg] = useState("");
 
   // Candidate form
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [linkedin, setLinkedin] = useState("");
 
-  const loadJobs = async () => {
-    const { data } = await supabase.auth.getUser();
-    const user = data?.user;
-    if (!user) return router.push("/login");
-
-    // role
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    let q = supabase.from("jobs").select("*").order("created_at", { ascending: false });
-    if (profile?.role !== "admin") q = q.eq("created_by", user.id);
-
-    const { data: jobsData, error } = await q;
-    if (error) return setMsg(error.message);
-
-    setJobs(jobsData || []);
-
-    // If no jobId selected, auto-select first job
-    if (!jobId && jobsData && jobsData.length > 0) {
-      setJobId(jobsData[0].id);
-      router.replace(`/kanban?jobId=${jobsData[0].id}`);
-    }
-  };
-
-  const loadCandidates = async (selectedJobId) => {
-    if (!selectedJobId) {
-      setCandidates([]);
-      return;
-    }
-    setMsg("");
-
-    const { data, error } = await supabase
-      .from("candidates")
-      .select("*")
-      .eq("job_id", selectedJobId)
-      .order("created_at", { ascending: false });
-
-    if (error) return setMsg(error.message);
-    setCandidates(data || []);
-  };
-
   useEffect(() => {
-    loadJobs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setSupabase(createSupabaseBrowserClient());
   }, []);
 
-  useEffect(() => {
-    loadCandidates(jobId);
-  }, [jobId]);
+  const { data: jobs, error: jobsError } = useSWR(supabase ? ["jobs", supabase] : null, ([_, supabase]) => fetchJobs(supabase));
+
+  const jobId = jobIdFromUrl || (jobs && jobs.length > 0 ? jobs[0].id : "");
+
+  const { data: candidates, error: candidatesError, mutate: mutateCandidates } = useSWR(jobId && supabase ? `candidates-${jobId}` : null, () => fetchCandidates(supabase, jobId));
 
   const filteredCandidates = useMemo(() => {
+    if (!candidates) return [];
     const s = search.trim().toLowerCase();
     if (!s) return candidates;
     return candidates.filter((c) => (c.name || "").toLowerCase().includes(s));
@@ -91,9 +76,8 @@ export default function KanbanPage() {
 
   const addCandidate = async (e) => {
     e.preventDefault();
-    if (!jobId) return setMsg("Please select a job first.");
+    if (!jobId) return toast.error("Please select a job first.");
 
-    setMsg("");
     const { error } = await supabase.from("candidates").insert({
       name,
       email,
@@ -102,12 +86,13 @@ export default function KanbanPage() {
       status: "applied",
     });
 
-    if (error) return setMsg(error.message);
+    if (error) return toast.error(error.message);
 
     setName("");
     setEmail("");
     setLinkedin("");
-    loadCandidates(jobId);
+    mutateCandidates();
+    toast.success("Candidate added successfully");
   };
 
   const updateStatus = async (candidateId, newStatus) => {
@@ -116,16 +101,19 @@ export default function KanbanPage() {
       .update({ status: newStatus })
       .eq("id", candidateId);
 
-    if (error) return setMsg(error.message);
+    if (error) return toast.error(error.message);
 
-    // refresh
-    loadCandidates(jobId);
+    mutateCandidates();
+    toast.success("Candidate status updated");
   };
 
   const onChangeJob = (newJobId) => {
-    setJobId(newJobId);
     router.replace(`/kanban?jobId=${newJobId}`);
   };
+
+  if (jobsError) return <div>Error loading jobs.</div>;
+  if (candidatesError) return <div>Error loading candidates.</div>;
+  if (!jobs || !supabase) return <div>Loading...</div>;
 
   return (
       <div className="p-6 max-w-6xl mx-auto">
@@ -159,8 +147,6 @@ export default function KanbanPage() {
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-
-      {msg && <p className="text-red-600 mt-3">{msg}</p>}
 
       <form onSubmit={addCandidate} className="mt-6 border rounded p-4 space-y-3">
         <h2 className="font-semibold">Add Candidate</h2>

@@ -1,11 +1,31 @@
+import { createSupabaseServerClient } from '@/lib/supabaseServer'
 import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from 'next/server'
 
 export async function POST(req) {
   try {
-    const { email, password, role } = await req.json();
+    const supabase = createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!email || !password || !role) {
-      return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if requester is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { email, password, role = 'customer' } = await req.json();
+
+    if (!email || !password) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
     const supabaseAdmin = createClient(
@@ -21,21 +41,23 @@ export async function POST(req) {
       });
 
     if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), { status: 400 });
+      return NextResponse.json({ error: createError.message }, { status: 400 });
     }
 
     const userId = created.user.id;
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       id: userId,
-      role,
+      role: role,
     });
 
     if (profileError) {
-      return new Response(JSON.stringify({ error: profileError.message }), { status: 400 });
+      // Cleanup user if profile creation fails
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return NextResponse.json({ error: profileError.message }, { status: 400 });
     }
 
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: "Server error" }), { status: 500 });
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (err) {
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
