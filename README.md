@@ -19,12 +19,12 @@ https://github.com/Muhammad-Awais341/Mini-ATS
 
 ## 🔐 Demo Account
 
-You can use the following credentials to test the application:
+You can use the following credentials of admin account to test the application:
 
-* **Email:** test2@gmail.com
+* **Email:** chaudharyawais471@gmail.com
 * **Password:** Test1234
 
-Or create your own account using the Sign Up option.
+And create your own customer account using the Sign Up option to test the application.
 
 ---
 
