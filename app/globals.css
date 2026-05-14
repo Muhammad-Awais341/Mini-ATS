@@ -6,13 +6,32 @@ body,
 #__next,
 main,
 body > div:first-child {
-  background: #e0f2fe !important; /* sky-100 */
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #f3e8ff 100%) !important;
+  background-attachment: fixed !important;
 }
 
 html, body {
   min-height: 100%;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 body {
   color: #0f172a !important; /* slate-900 */
+  @apply antialiased text-slate-900 selection:bg-indigo-200 selection:text-indigo-900;
+}
+
+/* Custom scrollbar for a premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

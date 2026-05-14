@@ -31,70 +31,67 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8">
-
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen p-6 md:p-10">
+      <div className="max-w-6xl mx-auto bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl p-8 md:p-12">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
-            <p className="text-slate-500 mt-1">Overview of your recruitment activity</p>
+            <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">Dashboard</h1>
+            <p className="text-slate-500 mt-2 text-lg">Overview of your recruitment activity</p>
           </div>
 
           <button
-            className="border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition"
+            className="bg-white border border-slate-200 text-slate-700 px-6 py-2.5 rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-sm hover:shadow transition-all font-medium"
             onClick={logout}
           >
             Logout
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-
-          <div className="border border-slate-200 rounded-xl p-6">
-            <p className="text-sm text-slate-500">Signed in as</p>
-            <p className="font-semibold mt-1">{data.email}</p>
-            <p className="text-sm text-slate-500 mt-2">
-              Role: <span className="font-medium text-slate-700">{data.role || "Loading..."}</span>
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow">
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">Signed in as</p>
+            <p className="text-xl font-bold text-slate-800 truncate">{data.email}</p>
+            <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium border border-indigo-100">
+              Role: <span className="ml-1 capitalize">{data.role || "Loading..."}</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="border border-slate-200 rounded-xl p-6 text-center">
-              <p className="text-sm text-slate-500">Jobs</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{data.jobsCount}</p>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl p-6 text-center text-white shadow-lg hover:-translate-y-1 transition-transform duration-300">
+              <p className="text-indigo-100 font-medium">Active Jobs</p>
+              <p className="text-5xl font-extrabold mt-3">{data.jobsCount}</p>
             </div>
-            <div className="border border-slate-200 rounded-xl p-6 text-center">
-              <p className="text-sm text-slate-500">Candidates</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{data.candidatesCount}</p>
+            <div className="bg-gradient-to-br from-violet-600 to-pink-500 rounded-2xl p-6 text-center text-white shadow-lg hover:-translate-y-1 transition-transform duration-300">
+              <p className="text-violet-100 font-medium">Candidates</p>
+              <p className="text-5xl font-extrabold mt-3">{data.candidatesCount}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4 pt-4 border-t border-slate-100">
           <button
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all font-semibold"
             onClick={() => router.push("/jobs")}
           >
-            Jobs
+            Manage Jobs
           </button>
 
           <button
-            className="border border-slate-300 px-5 py-2 rounded-lg hover:bg-slate-50 transition"
+            className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl hover:bg-slate-50 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all font-semibold"
             onClick={() => router.push("/kanban")}
           >
-            Kanban
+            Candidate Kanban
           </button>
 
           {data.role === "admin" && (
             <button
-              className="border border-slate-300 px-5 py-2 rounded-lg hover:bg-slate-50 transition"
+              className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-6 py-3 rounded-xl hover:bg-indigo-100 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all font-semibold"
               onClick={() => router.push("/admin")}
             >
-              Admin
+              Admin Panel
             </button>
           )}
         </div>
-
       </div>
     </div>
   );
