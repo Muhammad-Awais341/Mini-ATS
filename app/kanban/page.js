@@ -134,11 +134,11 @@ export default function KanbanPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white/60 border border-slate-200 rounded-2xl p-4 mb-8 shadow-sm flex flex-wrap gap-4 items-center">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Select Job</span>
+        <div className="bg-white/60 border border-slate-200 rounded-2xl p-4 mb-8 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+          <div className="w-full md:w-auto flex items-center gap-3">
+            <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide whitespace-nowrap">Select Job</span>
             <select
-              className="bg-white border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5 shadow-sm outline-none transition-all cursor-pointer"
+              className="bg-white border border-slate-200 text-slate-800 text-sm font-medium rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-[240px] p-2.5 shadow-sm outline-none transition-all cursor-pointer hover:bg-slate-50"
               value={jobId}
               onChange={(e) => onChangeJob(e.target.value)}
             >
@@ -150,9 +150,12 @@ export default function KanbanPage() {
             </select>
           </div>
 
-          <div className="flex-1 min-w-[250px]">
+          <div className="w-full md:flex-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
             <input
-              className="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 shadow-sm outline-none transition-all"
+              className="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block pl-10 p-2.5 shadow-sm outline-none transition-all"
               placeholder="Search candidates by name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
