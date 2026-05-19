@@ -485,12 +485,14 @@ export default function DashboardPage() {
   // --- HR MANAGER / ADMIN VIEW ---
   const isManager = data.role === "admin" || data.role === "manager";
   
-  // Detect recent applicants in the last 24h as a new applicant signifier
-  const hasNewApplicants = data.recentCandidates?.some((c) => {
-    const appliedDate = new Date(c.created_at);
+  // Detect recent applicants in the last 24h as a new applicant signifier with safe UTC parsing
+  const recentNewApplicant = data.recentCandidates?.find((c) => {
+    const appliedDate = new Date(c.created_at.endsWith('Z') ? c.created_at : c.created_at + 'Z');
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     return appliedDate > oneDayAgo;
   });
+
+  const hasNewApplicants = !!recentNewApplicant;
 
   return (
     <div className="min-h-screen p-6 md:p-10">
@@ -527,15 +529,15 @@ export default function DashboardPage() {
                     New Applicant Alert
                   </h4>
                   <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                    A candidate has recently applied to one of your active positions within the last 24 hours!
+                    A candidate has recently applied for <span className="font-semibold text-amber-955">{recentNewApplicant.jobTitle}</span> within the last 24 hours!
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => router.push("/kanban")}
+                onClick={() => router.push(`/kanban?jobId=${recentNewApplicant.job_id}`)}
                 className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:shadow transition-colors whitespace-nowrap"
               >
-                Go to Pipeline
+                Open Job Pipeline
               </button>
             </div>
           )}
@@ -612,17 +614,26 @@ export default function DashboardPage() {
                   ? c.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
                   : c.email.slice(0, 2).toUpperCase();
 
-                // Compute friendly time string
-                const appliedTime = new Date(c.created_at);
+                // Compute exact, local-time friendly timestamp with UTC parsing
+                const appliedTime = new Date(c.created_at.endsWith('Z') ? c.created_at : c.created_at + 'Z');
                 const diffMs = Date.now() - appliedTime.getTime();
-                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMin = Math.floor(diffMs / (1000 * 60));
+                const diffHours = Math.floor(diffMin / 60);
+
+                const timeString = appliedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateString = appliedTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
                 let timeStr = "";
-                if (diffHours < 1) {
-                  timeStr = "Just now";
+                if (diffMin < 1) {
+                  timeStr = `Just now (${timeString})`;
+                } else if (diffMin < 60) {
+                  timeStr = `${diffMin}m ago (${timeString})`;
                 } else if (diffHours < 24) {
-                  timeStr = `${diffHours}h ago`;
+                  timeStr = `${diffHours}h ago (${timeString})`;
+                } else if (diffHours < 48) {
+                  timeStr = `Yesterday (${timeString})`;
                 } else {
-                  timeStr = appliedTime.toLocaleDateString();
+                  timeStr = `${dateString} (${timeString})`;
                 }
 
                 const statusMeta = STATUS_META[c.status] || { label: c.status, class: "bg-slate-50 text-slate-600 border-slate-100" };

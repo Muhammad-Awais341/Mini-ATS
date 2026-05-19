@@ -14,6 +14,7 @@ const fetcher = async ([supabase]) => {
 
   const role = profile?.role || '';
   const name = profile?.name || '';
+  const isPrivileged = role === 'admin' || role === 'manager';
 
   if (role === 'candidate') {
     // Candidates see all jobs and their own applications
@@ -37,12 +38,8 @@ const fetcher = async ([supabase]) => {
     };
   }
 
-  // Managers and admins see job counts, candidate counts, and recent candidate activity
+  // Managers and admins see ALL job counts, candidate counts, and recent candidate activity globally
   let jobsQuery = supabase.from('jobs').select('*', { count: 'exact', head: true });
-  if (role !== 'admin') {
-    // Managers only see their own job counts
-    jobsQuery = jobsQuery.eq('created_by', user.id);
-  }
   const { count: jobsCount } = await jobsQuery;
 
   let candidatesQuery = supabase.from('candidates').select('*', { count: 'exact', head: true });
@@ -50,24 +47,6 @@ const fetcher = async ([supabase]) => {
     .from('candidates')
     .select('*')
     .order('created_at', { ascending: false });
-
-  if (role !== 'admin') {
-    const { data: jobs } = await supabase.from('jobs').select('id').eq('created_by', user.id);
-    const jobIds = jobs?.map((j) => j.id) || [];
-    if (jobIds.length > 0) {
-      candidatesQuery = candidatesQuery.in('job_id', jobIds);
-      recentQuery = recentQuery.in('job_id', jobIds);
-    } else {
-      return {
-        email: user.email,
-        role,
-        name,
-        jobsCount: jobsCount || 0,
-        candidatesCount: 0,
-        recentCandidates: [],
-      };
-    }
-  }
 
   const { count: candidatesCount } = await candidatesQuery;
   const { data: recentCandidates } = await recentQuery.limit(5);
