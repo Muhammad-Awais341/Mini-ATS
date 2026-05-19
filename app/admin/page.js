@@ -98,7 +98,7 @@ export default function ManagerPage() {
             {/* Title */}
             <div className="mb-7">
               <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">
-                Manager Panel
+                {currentUserRole === "admin" ? "Super Admin Panel" : "Manager Panel"}
               </h1>
               <p className="text-slate-500 mt-1 text-sm leading-relaxed">
                 Create a new candidate account. The candidate will use these credentials to log in and view their application status.
