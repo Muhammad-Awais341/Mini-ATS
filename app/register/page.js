@@ -29,7 +29,7 @@ export default function RegisterPage() {
     if (user) {
       await supabase.from("profiles").insert({
         id: user.id,
-        role: "customer",
+        role: "candidate",
       });
     }
 

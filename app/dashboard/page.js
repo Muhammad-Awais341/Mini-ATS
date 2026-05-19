@@ -6,6 +6,19 @@ import { useDashboardData } from "./useDashboardData";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { useSWRConfig } from "swr";
 
+function getRoleLabel(role) {
+  if (role === "admin") return "Super Admin";
+  if (role === "manager") return "Manager (HR)";
+  if (role === "candidate") return "Candidate";
+  return role || "Loading...";
+}
+
+function getRoleBadgeClass(role) {
+  if (role === "admin") return "bg-violet-50 text-violet-700 border-violet-100";
+  if (role === "manager") return "bg-indigo-50 text-indigo-700 border-indigo-100";
+  return "bg-emerald-50 text-emerald-700 border-emerald-100";
+}
+
 export default function DashboardPage() {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
@@ -14,10 +27,8 @@ export default function DashboardPage() {
 
   const logout = async () => {
     await supabase.auth.signOut();
-    
     // Clear SWR cache to prevent data leakage between users
     mutate(() => true, undefined, { revalidate: false });
-    
     router.push("/login");
   };
 
@@ -29,6 +40,8 @@ export default function DashboardPage() {
     router.push("/login");
     return null;
   }
+
+  const isManager = data.role === "admin" || data.role === "manager";
 
   return (
     <div className="min-h-screen p-6 md:p-10">
@@ -51,8 +64,8 @@ export default function DashboardPage() {
           <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">Signed in as</p>
             <p className="text-xl font-bold text-slate-800 truncate">{data.email}</p>
-            <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium border border-indigo-100">
-              Role: <span className="ml-1 capitalize">{data.role || "Loading..."}</span>
+            <div className={`mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getRoleBadgeClass(data.role)}`}>
+              {getRoleLabel(data.role)}
             </div>
           </div>
 
@@ -80,15 +93,15 @@ export default function DashboardPage() {
             className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl hover:bg-slate-50 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all font-semibold"
             onClick={() => router.push("/kanban")}
           >
-            Candidate Kanban
+            Candidate Pipeline
           </button>
 
-          {data.role === "admin" && (
+          {isManager && (
             <button
               className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-6 py-3 rounded-xl hover:bg-indigo-100 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all font-semibold"
               onClick={() => router.push("/admin")}
             >
-              Admin Panel
+              Manager Panel
             </button>
           )}
         </div>

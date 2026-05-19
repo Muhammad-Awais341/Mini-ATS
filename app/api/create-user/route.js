@@ -4,28 +4,38 @@ import { NextResponse } from 'next/server'
 
 export async function POST(req) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if requester is admin
+    // Allow both root admin and managers to create users
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    if (profile?.role !== 'admin' && profile?.role !== 'manager') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { email, password, role = 'customer' } = await req.json();
+    const { email, password, role = 'candidate', name = '' } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Only root admin can create manager accounts
+    if (role === 'manager' && profile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Only the root admin can create manager accounts' }, { status: 403 });
+    }
+
+    // Prevent creating another root admin via UI
+    if (role === 'admin') {
+      return NextResponse.json({ error: 'Cannot create an admin account via this panel' }, { status: 403 });
     }
 
     const supabaseAdmin = createClient(
@@ -45,19 +55,22 @@ export async function POST(req) {
     }
 
     const userId = created.user.id;
-    const { error: profileError } = await supabaseAdmin.from("profiles").insert({
+    const profilePayload = {
       id: userId,
       role: role,
-    });
+      ...(name?.trim() ? { name: name.trim() } : {}),
+    };
+    const { error: profileError } = await supabaseAdmin.from("profiles").insert(profilePayload);
 
     if (profileError) {
-      // Cleanup user if profile creation fails
+      // Cleanup auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(userId);
       return NextResponse.json({ error: profileError.message }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
+    console.error('[create-user] Internal error:', err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

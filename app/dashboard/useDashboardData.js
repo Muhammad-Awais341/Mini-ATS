@@ -13,21 +13,22 @@ const fetcher = async ([supabase]) => {
     .single();
 
   const role = profile?.role || '';
+  // Both root admin and managers see all data
+  const isPrivileged = role === 'admin' || role === 'manager';
 
   let jobsQuery = supabase.from('jobs').select('*', { count: 'exact', head: true });
-  if (role !== 'admin') {
+  if (!isPrivileged) {
     jobsQuery = jobsQuery.eq('created_by', user.id);
   }
   const { count: jobsCount } = await jobsQuery;
 
   let candidatesQuery = supabase.from('candidates').select('*', { count: 'exact', head: true });
-  if (role !== 'admin') {
+  if (!isPrivileged) {
     const { data: jobs } = await supabase.from('jobs').select('id').eq('created_by', user.id);
     const jobIds = jobs?.map((j) => j.id) || [];
     if (jobIds.length > 0) {
       candidatesQuery = candidatesQuery.in('job_id', jobIds);
     } else {
-      // If the user has no jobs, they have no candidates
       return {
         email: user.email,
         role,

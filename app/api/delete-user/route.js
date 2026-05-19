@@ -4,21 +4,21 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if requester is admin
+    // Allow both root admin and managers to delete users
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    if (profile?.role !== 'admin' && profile?.role !== 'manager') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -28,7 +28,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
-    // Initialize Supabase Admin Client with Service Role Key
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -48,6 +47,7 @@ export async function POST(request) {
 
     return NextResponse.json({ message: 'User deleted successfully' })
   } catch (err) {
+    console.error('[delete-user] Internal error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
