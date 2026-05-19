@@ -14,7 +14,6 @@ const fetcher = async ([supabase]) => {
 
   const role = profile?.role || '';
   const name = profile?.name || '';
-  const isPrivileged = role === 'admin' || role === 'manager';
 
   if (role === 'candidate') {
     // Candidates see all jobs and their own applications
@@ -38,7 +37,7 @@ const fetcher = async ([supabase]) => {
     };
   }
 
-  // Managers and admins see job counts and candidate counts
+  // Managers and admins see job counts, candidate counts, and recent candidate activity
   let jobsQuery = supabase.from('jobs').select('*', { count: 'exact', head: true });
   if (role !== 'admin') {
     // Managers only see their own job counts
@@ -47,11 +46,17 @@ const fetcher = async ([supabase]) => {
   const { count: jobsCount } = await jobsQuery;
 
   let candidatesQuery = supabase.from('candidates').select('*', { count: 'exact', head: true });
+  let recentQuery = supabase
+    .from('candidates')
+    .select('*')
+    .order('created_at', { ascending: false });
+
   if (role !== 'admin') {
     const { data: jobs } = await supabase.from('jobs').select('id').eq('created_by', user.id);
     const jobIds = jobs?.map((j) => j.id) || [];
     if (jobIds.length > 0) {
       candidatesQuery = candidatesQuery.in('job_id', jobIds);
+      recentQuery = recentQuery.in('job_id', jobIds);
     } else {
       return {
         email: user.email,
@@ -59,11 +64,25 @@ const fetcher = async ([supabase]) => {
         name,
         jobsCount: jobsCount || 0,
         candidatesCount: 0,
+        recentCandidates: [],
       };
     }
   }
 
   const { count: candidatesCount } = await candidatesQuery;
+  const { data: recentCandidates } = await recentQuery.limit(5);
+
+  // Fetch job titles to build jobMap on client side
+  const { data: activeJobs } = await supabase.from('jobs').select('id, title');
+  const jobMap = {};
+  activeJobs?.forEach((j) => {
+    jobMap[j.id] = j.title;
+  });
+
+  const formattedRecent = (recentCandidates || []).map((c) => ({
+    ...c,
+    jobTitle: jobMap[c.job_id] || 'Unknown Position',
+  }));
 
   return {
     email: user.email,
@@ -71,6 +90,7 @@ const fetcher = async ([supabase]) => {
     name,
     jobsCount: jobsCount || 0,
     candidatesCount: candidatesCount || 0,
+    recentCandidates: formattedRecent,
   };
 };
 

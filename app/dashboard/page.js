@@ -484,68 +484,189 @@ export default function DashboardPage() {
 
   // --- HR MANAGER / ADMIN VIEW ---
   const isManager = data.role === "admin" || data.role === "manager";
+  
+  // Detect recent applicants in the last 24h as a new applicant signifier
+  const hasNewApplicants = data.recentCandidates?.some((c) => {
+    const appliedDate = new Date(c.created_at);
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return appliedDate > oneDayAgo;
+  });
+
   return (
     <div className="min-h-screen p-6 md:p-10">
-      <div className="max-w-6xl mx-auto bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl p-8 md:p-12">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
-          <div>
-            <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">Dashboard</h1>
-            <p className="text-slate-500 mt-2 text-lg">Overview of your recruitment activity</p>
-          </div>
-
-          <button
-            className="bg-white border border-slate-200 text-slate-700 px-6 py-2.5 rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-sm hover:shadow transition-all font-medium"
-            onClick={logout}
-          >
-            Logout
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">Signed in as</p>
-            <p className="text-xl font-bold text-slate-800 truncate">{data.email}</p>
-            <div className={`mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getRoleBadgeClass(data.role)}`}>
-              {getRoleLabel(data.role)}
+      <div className="max-w-6xl mx-auto flex flex-col gap-8">
+        
+        {/* Main Content Box */}
+        <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl p-8 md:p-12 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-400 via-violet-500 to-pink-500" />
+          
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
+            <div>
+              <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">Dashboard</h1>
+              <p className="text-slate-500 mt-2 text-lg">Overview of your recruitment activity</p>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl p-6 text-center text-white shadow-lg hover:-translate-y-1 transition-transform duration-300">
-              <p className="text-indigo-100 font-medium">Active Jobs</p>
-              <p className="text-5xl font-extrabold mt-3">{data.jobsCount}</p>
-            </div>
-            <div className="bg-gradient-to-br from-violet-600 to-pink-500 rounded-2xl p-6 text-center text-white shadow-lg hover:-translate-y-1 transition-transform duration-300">
-              <p className="text-violet-100 font-medium">Candidates</p>
-              <p className="text-5xl font-extrabold mt-3">{data.candidatesCount}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4 pt-4 border-t border-slate-100">
-          <button
-            className="bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all font-semibold"
-            onClick={() => router.push("/jobs")}
-          >
-            Manage Jobs
-          </button>
-
-          <button
-            className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl hover:bg-slate-50 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all font-semibold"
-            onClick={() => router.push("/kanban")}
-          >
-            Candidate Pipeline
-          </button>
-
-          {isManager && (
             <button
-              className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-6 py-3 rounded-xl hover:bg-indigo-100 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all font-semibold"
-              onClick={() => router.push("/admin")}
+              className="bg-white border border-slate-200 text-slate-700 px-6 py-2.5 rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-sm hover:shadow transition-all font-medium"
+              onClick={logout}
             >
-              Manager Panel
+              Logout
             </button>
+          </div>
+
+          {/* Elegant New Applicant Alert Signifier */}
+          {hasNewApplicants && (
+            <div className="mb-8 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center gap-3">
+                <span className="relative flex h-3.5 w-3.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
+                </span>
+                <div>
+                  <h4 className="text-sm font-bold text-amber-900">
+                    New Applicant Alert
+                  </h4>
+                  <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                    A candidate has recently applied to one of your active positions within the last 24 hours!
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => router.push("/kanban")}
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:shadow transition-colors whitespace-nowrap"
+              >
+                Go to Pipeline
+              </button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow">
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">Signed in as</p>
+              <p className="text-xl font-bold text-slate-800 truncate">{data.email}</p>
+              <div className={`mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getRoleBadgeClass(data.role)}`}>
+                {getRoleLabel(data.role)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl p-6 text-center text-white shadow-lg hover:-translate-y-1 transition-transform duration-300">
+                <p className="text-indigo-100 font-medium">Active Jobs</p>
+                <p className="text-5xl font-extrabold mt-3">{data.jobsCount}</p>
+              </div>
+              <div className="bg-gradient-to-br from-violet-600 to-pink-500 rounded-2xl p-6 text-center text-white shadow-lg hover:-translate-y-1 transition-transform duration-300">
+                <p className="text-violet-100 font-medium">Candidates</p>
+                <p className="text-5xl font-extrabold mt-3">{data.candidatesCount}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-4 pt-6 border-t border-slate-100">
+            <button
+              className="bg-slate-900 text-white px-6 py-3.5 rounded-xl hover:bg-slate-800 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all font-semibold"
+              onClick={() => router.push("/jobs")}
+            >
+              Manage Jobs
+            </button>
+
+            <button
+              className="bg-white border border-slate-200 text-slate-700 px-6 py-3.5 rounded-xl hover:bg-slate-50 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all font-semibold"
+              onClick={() => router.push("/kanban")}
+            >
+              Candidate Pipeline
+            </button>
+
+            {isManager && (
+              <button
+                className="bg-indigo-55 border border-indigo-100 text-indigo-700 px-6 py-3.5 rounded-xl hover:bg-indigo-100 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all font-semibold"
+                onClick={() => router.push("/admin")}
+              >
+                {data.role === "admin" ? "Admin Panel" : "Manager Panel"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Applicant Activity Feed */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800">Recent Applications Activity</h2>
+              <p className="text-slate-500 text-sm mt-0.5">Real-time status updates of incoming candidates</p>
+            </div>
+            <span className="text-xs font-semibold bg-slate-50 border border-slate-100 text-slate-500 px-3.5 py-1.5 rounded-full">
+              Latest {data.recentCandidates?.length || 0} applications
+            </span>
+          </div>
+
+          {(!data.recentCandidates || data.recentCandidates.length === 0) ? (
+            <div className="text-center py-12 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl">
+              <p className="text-slate-500 text-sm">No recent applicant activity found.</p>
+              <p className="text-slate-400 text-xs mt-0.5">Applicants will appear here in real-time as they submit applications.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {data.recentCandidates.map((c) => {
+                // Get initials
+                const initials = c.name
+                  ? c.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+                  : c.email.slice(0, 2).toUpperCase();
+
+                // Compute friendly time string
+                const appliedTime = new Date(c.created_at);
+                const diffMs = Date.now() - appliedTime.getTime();
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                let timeStr = "";
+                if (diffHours < 1) {
+                  timeStr = "Just now";
+                } else if (diffHours < 24) {
+                  timeStr = `${diffHours}h ago`;
+                } else {
+                  timeStr = appliedTime.toLocaleDateString();
+                }
+
+                const statusMeta = STATUS_META[c.status] || { label: c.status, class: "bg-slate-50 text-slate-600 border-slate-100" };
+
+                return (
+                  <div
+                    key={c.id}
+                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border border-slate-100 hover:border-slate-200 rounded-2xl hover:bg-slate-50/55 hover:shadow-sm transition-all gap-4"
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+                        {initials}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-slate-800 text-sm">{c.name || "Anonymous"}</h4>
+                          <span className="text-xs text-slate-400 font-medium">({c.email})</span>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusMeta.class}`}>
+                            {statusMeta.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Applied for <span className="font-semibold text-indigo-600">{c.jobTitle}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3.5 w-full sm:w-auto justify-between sm:justify-end">
+                      <span className="text-xs text-slate-400 font-medium">{timeStr}</span>
+                      <button
+                        onClick={() => router.push(`/kanban?jobId=${c.job_id}`)}
+                        className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition whitespace-nowrap"
+                      >
+                        View in Pipeline
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
+
       </div>
     </div>
   );
