@@ -67,6 +67,25 @@ export default function KanbanPage() {
     setSupabase(createSupabaseBrowserClient());
   }, []);
 
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!supabase) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return router.push("/login");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.role !== "admin" && profile?.role !== "manager") {
+        router.push("/dashboard");
+      }
+    };
+    checkAccess();
+  }, [supabase, router]);
+
   // Close suggestions dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {

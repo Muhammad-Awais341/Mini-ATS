@@ -24,6 +24,17 @@ export default function EditJobPage() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) return router.push("/login");
 
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userData.user.id)
+        .single();
+
+      if (profile?.role !== "admin" && profile?.role !== "manager") {
+        router.push("/dashboard");
+        return;
+      }
+
       const { data: jobData, error: fetchError } = await supabase
         .from("jobs")
         .select("*")
@@ -37,17 +48,9 @@ export default function EditJobPage() {
       }
 
       // Verify ownership
-      if (jobData.created_by !== userData.user.id) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", userData.user.id)
-          .single();
-
-        if (profile?.role !== "admin") {
-          router.push("/jobs");
-          return;
-        }
+      if (jobData.created_by !== userData.user.id && profile?.role !== "admin") {
+        router.push("/jobs");
+        return;
       }
 
       setJob(jobData);

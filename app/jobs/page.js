@@ -20,6 +20,17 @@ export default function JobsPage() {
       const { data } = await supabase.auth.getUser();
       const user = data?.user;
       if (!user) return router.push("/login");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.role !== "admin" && profile?.role !== "manager") {
+        return router.push("/dashboard");
+      }
+
       setUserId(user.id);
     };
     getUser();
